@@ -157,6 +157,8 @@ void DW1000Class::reselect(uint8_t ss) {
 void DW1000Class::begin(uint8_t irq, uint8_t rst) {
 	// generous initial init/wake-up-idle delay
 	delay(5);
+	// set pin mode of irq pin
+	pinMode(irq, INPUT);
 	// start SPI
 	SPI.begin();
 #ifndef ESP8266
@@ -1433,7 +1435,7 @@ float DW1000Class::getReceiveQuality() {
 	return (float)f2/noise;
 }
 
-float DW1000Class::getFirstPathPower() {
+float DW1000Class::getFirstPathPower(float* pFpAmpl) {
 	byte         fpAmpl1Bytes[LEN_FP_AMPL1];
 	byte         fpAmpl2Bytes[LEN_FP_AMPL2];
 	byte         fpAmpl3Bytes[LEN_FP_AMPL3];
@@ -1456,6 +1458,8 @@ float DW1000Class::getFirstPathPower() {
 		corrFac = 1.1667;
 	}
 	float estFpPwr = 10.0*log10(((float)f1*(float)f1+(float)f2*(float)f2+(float)f3*(float)f3)/((float)N*(float)N))-A;
+	if(pFpAmpl)
+		*pFpAmpl = max(f1, max(f2, f3));
 	if(estFpPwr <= -88) {
 		return estFpPwr;
 	} else {
@@ -1463,6 +1467,28 @@ float DW1000Class::getFirstPathPower() {
 		estFpPwr += (estFpPwr+88)*corrFac;
 	}
 	return estFpPwr;
+}
+
+float DW1000Class::getPeakAmplitude(float* pPkIndex){
+	byte 		pkAmplBytes[LEN_LDE_PPAMPL];
+	byte 		pkIndxBytes[LEN_LDE_PPINDX];
+	uint16_t 	pk_ampl;
+	uint16_t 	pk_index;
+	readBytes(LDE_IF, LDE_PPAMPL_SUB, pkAmplBytes, LEN_LDE_PPAMPL);
+	readBytes(LDE_IF, LDE_PPINDX_SUB, pkIndxBytes, LEN_LDE_PPINDX);
+	pk_ampl = (uint16_t)pkAmplBytes[0] | ((uint16_t)pkAmplBytes[1] << 8);
+	pk_index = (uint16_t)pkIndxBytes[0] | ((uint16_t)pkIndxBytes[1] << 8);
+	if (pPkIndex)
+		*pPkIndex = (float)pk_index;
+	return (float)pk_ampl;
+}
+
+float DW1000Class::getFPIndex(){
+	byte 		fpIndxBytes[LEN_FP_INDEX];
+	uint16_t 	fp_indx;
+	readBytes(RX_TIME, FP_INDEX_SUB, fpIndxBytes, LEN_FP_INDEX);
+	fp_indx = (uint16_t)fpIndxBytes[0] | ((uint16_t)fpIndxBytes[1] << 8);
+	return (float)fp_indx;
 }
 
 float DW1000Class::getReceivePower() {
@@ -1668,6 +1694,7 @@ void DW1000Class::writeBytes(byte cmd, uint16_t offset, byte data[], uint16_t da
 	delayMicroseconds(5);
 	digitalWrite(_ss, HIGH);
 	SPI.endTransaction();
+	// delayMicroseconds(20);
 }
 
 

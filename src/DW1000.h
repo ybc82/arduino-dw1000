@@ -247,8 +247,10 @@ public:
 	
 	/* receive quality information. */
 	static float getReceivePower();
-	static float getFirstPathPower();
+	static float getFirstPathPower(float* pFpAmpl);
+	static float getPeakAmplitude(float* pPkIndex);
 	static float getReceiveQuality();
+	static float getFPIndex();
 	
 	/* interrupt management. */
 	static void interruptOnSent(boolean val);

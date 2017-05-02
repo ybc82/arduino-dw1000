@@ -109,9 +109,11 @@
 #define RX_TIME 0x15
 #define LEN_RX_TIME 14
 #define RX_STAMP_SUB 0x00
+#define FP_INDEX_SUB 0x05
 #define FP_AMPL1_SUB 0x07
 #define LEN_RX_STAMP LEN_STAMP
 #define LEN_FP_AMPL1 2
+#define LEN_FP_INDEX 2
 
 // RX frame quality
 #define RX_FQUAL 0x12
@@ -200,6 +202,8 @@
 // LDE_CFG1 (for re-tuning only)
 #define LDE_IF 0x2E
 #define LDE_CFG1_SUB 0x0806
+#define LDE_PPINDX_SUB 0x1000
+#define LDE_PPAMPL_SUB 0x1002
 #define LDE_RXANTD_SUB 0x1804
 #define LDE_CFG2_SUB 0x1806
 #define LDE_REPC_SUB 0x2804
@@ -207,6 +211,8 @@
 #define LEN_LDE_CFG2 2
 #define LEN_LDE_REPC 2
 #define LEN_LDE_RXANTD 2
+#define LEN_LDE_PPINDX 2
+#define LEN_LDE_PPAMPL 2
 
 // TX_POWER (for re-tuning only)
 #define TX_POWER 0x1E

@@ -51,7 +51,11 @@ public:
 	void setRange(float range);
 	void setRXPower(float power);
 	void setFPPower(float power);
+	void setFPAmpl(float PFAmpl);
+	void setPeakAmpl(float pkAmpl);
+	void setPPIndx(float PPIndx);
 	void setQuality(float quality);
+	void setFPIndx(float FPIndx);
 	
 	void setReplyDelayTime(uint16_t time) { _replyDelayTimeUS = time; }
 	
@@ -72,7 +76,11 @@ public:
 	float getRange();
 	float getRXPower();
 	float getFPPower();
+	float getFPAmpl();
+	float getPeakAmpl();
+	float getPPIndx();
 	float getQuality();
+	float getFPIndx();
 	
 	boolean isAddressEqual(DW1000Device* device);
 	boolean isShortAddressEqual(DW1000Device* device);
@@ -102,6 +110,10 @@ private:
 	int16_t _RXPower;
 	int16_t _FPPower;
 	int16_t _quality;
+	float 	_FPAmpl;
+	float 	_PPIndx;
+	float 	_PKAmpl;
+	float	_FPIndx;
 	
 	void randomShortAddress();
 	

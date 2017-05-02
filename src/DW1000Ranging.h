@@ -30,6 +30,7 @@
 #include "DW1000Time.h"
 #include "DW1000Device.h" 
 #include "DW1000Mac.h"
+#include "info.h"
 
 // messages used in the ranging protocol
 #define POLL 0
@@ -60,7 +61,7 @@
 #define ANCHOR 1
 
 //default timer delay
-#define DEFAULT_TIMER_DELAY 80
+#define DEFAULT_TIMER_DELAY 80 // 200 works
 
 //debug mode
 #ifndef DEBUG
@@ -78,8 +79,8 @@ public:
 	static void    initCommunication(uint8_t myRST = DEFAULT_RST_PIN, uint8_t mySS = DEFAULT_SPI_SS_PIN, uint8_t myIRQ = 2);
 	static void    configureNetwork(uint16_t deviceAddress, uint16_t networkId, const byte mode[]);
 	static void    generalStart();
-	static void    startAsAnchor(char address[], const byte mode[]);
-	static void    startAsTag(char address[], const byte mode[]);
+	static void    startAsAnchor(char address[], const char shortAddress[], const byte mode[]);
+	static void    startAsTag(char address[], const char shortAddress[], const byte mode[]);
 	static boolean addNetworkDevices(DW1000Device* device, boolean shortAddress);
 	static boolean addNetworkDevices(DW1000Device* device);
 	static void    removeNetworkDevices(int16_t index);
@@ -87,7 +88,8 @@ public:
 	//setters
 	static void setReplyTime(uint16_t replyDelayTimeUs);
 	static void setResetPeriod(uint32_t resetPeriod);
-	
+	static void setExpectedMsgId(byte msgId) {_expectedMsgId = msgId;}
+
 	//getters
 	static byte* getCurrentAddress() { return _currentAddress; };
 	
@@ -123,7 +125,7 @@ public:
 private:
 	//other devices in the network
 	static DW1000Device _networkDevices[MAX_DEVICES];
-	static uint8_t      _networkDevicesNumber;
+	static volatile uint8_t      _networkDevicesNumber;
 	static int16_t      _lastDistantDevice;
 	static byte         _currentAddress[8];
 	static byte         _currentShortAddress[2];
@@ -205,6 +207,9 @@ private:
 	
 	//Utils
 	static float filterValue(float value, float previousValue, uint16_t numberOfElements);
+
+	// Debug info
+	static Info info1;
 };
 
 extern DW1000RangingClass DW1000Ranging;

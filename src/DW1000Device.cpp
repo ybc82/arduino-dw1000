@@ -72,8 +72,15 @@ void DW1000Device::setRXPower(float RXPower) { _RXPower = round(RXPower*100); }
 
 void DW1000Device::setFPPower(float FPPower) { _FPPower = round(FPPower*100); }
 
+void DW1000Device::setFPAmpl(float FPAmpl) { _FPAmpl = FPAmpl; }
+
+void DW1000Device::setPeakAmpl(float pkAmpl) { _PKAmpl = pkAmpl; }
+
+void DW1000Device::setPPIndx(float PPIndx) { _PPIndx = PPIndx; }
+
 void DW1000Device::setQuality(float quality) { _quality = round(quality*100); }
 
+void DW1000Device::setFPIndx(float FPIndx) { _FPIndx = FPIndx; }
 
 byte* DW1000Device::getByteAddress() {
 	return _ownAddress;
@@ -120,8 +127,15 @@ float DW1000Device::getRXPower() { return float(_RXPower)/100.0f; }
 
 float DW1000Device::getFPPower() { return float(_FPPower)/100.0f; }
 
+float DW1000Device::getFPAmpl() { return _FPAmpl; }
+
+float DW1000Device::getPeakAmpl() { return _PKAmpl; }
+
+float DW1000Device::getPPIndx() {return _PPIndx; }
+
 float DW1000Device::getQuality() { return float(_quality)/100.0f; }
 
+float DW1000Device::getFPIndx() { return _FPIndx; }
 
 void DW1000Device::randomShortAddress() {
 	_shortAddress[0] = random(0, 256);
