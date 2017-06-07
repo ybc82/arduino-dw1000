@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file DW1000Ranging.h
+ * @file DW1000SyncRanging.h
  * Arduino global library (header file) working with the DW1000 library
  * for the Decawave DW1000 UWB transceiver IC.
  *
@@ -24,6 +24,9 @@
  * - do not safe duplicate of pin settings
  * - maybe other object structure
  * - use enums instead of preprocessor constants
+ *
+ * Copyright (c) 2017 by Bocheng Yu <yuuubc@gmail.com>
+ * TDOF localization plus synchronization among base node and anchor nodes
  */
 
 #include "DW1000.h"
@@ -32,18 +35,20 @@
 #include "DW1000Mac.h"
 
 // messages used in the ranging protocol
-#define POLL 0
+#define POLL 0  // shared between TDOA and TOF algorithms
 #define POLL_ACK 1
-#define RANGE 2
+#define RANGE 2 // shared between TDOA and TOF algorithms
 #define RANGE_REPORT 3
 #define RANGE_FAILED 255
 #define BLINK 4
 #define RANGING_INIT 5
+#define RANGE_ALL 6 	// TDOA ranging
 
-#define LEN_DATA 90
+#define LEN_DATA 102
 
 //Max devices we put in the networkDevices array ! Each DW1000Device is 74 Bytes in SRAM memory for now.
-#define MAX_DEVICES 4
+// For TDOA scheme, this is the max devices number of [Base + Anchors]
+#define MAX_DEVICES 5
 
 //Default Pin for module:
 #define DEFAULT_RST_PIN 9
@@ -51,24 +56,26 @@
 
 //Default value
 //in ms
-#define DEFAULT_RESET_PERIOD 200
+#define DEFAULT_RESET_PERIOD 200 // was 200
 //in us
-#define DEFAULT_REPLY_DELAY_TIME 7000
+#define DEFAULT_REPLY_DELAY_TIME 7000 // 7000
 
-//sketch type (anchor or tag)
+//sketch type (anchor or tag or base)
 #define TAG 0
 #define ANCHOR 1
+#define BASE 2
 
 //default timer delay
-#define DEFAULT_TIMER_DELAY 80 // 200 works
+#define DEFAULT_TIMER_DELAY 80 // 80 // 200 works
 
+// #define DEBUG true
 //debug mode
 #ifndef DEBUG
 #define DEBUG false
 #endif
 
 
-class DW1000RangingClass {
+class DW1000SyncRangingClass {
 public:
 	//variables
 	// data buffer
@@ -80,6 +87,7 @@ public:
 	static void    generalStart();
 	static void    startAsAnchor(char address[], const char shortAddress[], const byte mode[]);
 	static void    startAsTag(char address[], const char shortAddress[], const byte mode[]);
+	static void    startAsBase(char address[], const char shortAddress[], const byte mode[]);
 	static boolean addNetworkDevices(DW1000Device* device, boolean shortAddress);
 	static boolean addNetworkDevices(DW1000Device* device);
 	static void    removeNetworkDevices(int16_t index);
@@ -115,6 +123,8 @@ public:
 	
 	
 	static DW1000Device* getDistantDevice();
+	static DW1000Device* getBaseDevice();
+	static DW1000Device* getAnchorDevice(uint8_t index);
 	static DW1000Device* searchDistantDevice(byte shortAddress[]);
 	
 	//FOR DEBUGGING
@@ -140,7 +150,7 @@ private:
 	static void (* _handleInactiveDevice)(DW1000Device*);
 	
 	//sketch type (tag or anchor)
-	static int16_t          _type; //0 for tag and 1 for anchor
+	static int16_t          _type; //0 for tag, 1 for anchor, 2 for base
 	// TODO check type, maybe enum?
 	// message flow state
 	static volatile byte    _expectedMsgId;
@@ -188,10 +198,12 @@ private:
 	static void transmitInit();
 	static void transmit(byte datas[]);
 	static void transmit(byte datas[], DW1000Time time);
+	static void transmitAbs(byte datas[], DW1000Time time);
 	static void transmitBlink();
 	static void transmitRangingInit(DW1000Device* myDistantDevice);
 	static void transmitPollAck(DW1000Device* myDistantDevice);
 	static void transmitRangeReport(DW1000Device* myDistantDevice);
+	static void transmitRangeAll(DW1000Device* myDistantDevice); // for TDOA
 	static void transmitRangeFailed(DW1000Device* myDistantDevice);
 	static void receiver();
 	
@@ -209,4 +221,4 @@ private:
 
 };
 
-extern DW1000RangingClass DW1000Ranging;
+extern DW1000SyncRangingClass DW1000SyncRanging;

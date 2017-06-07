@@ -87,12 +87,14 @@ public:
 	
 	//functions which contains the date: (easier to put as public)
 	// timestamps to remember
-	DW1000Time timePollSent;
-	DW1000Time timePollReceived;
-	DW1000Time timePollAckSent;
-	DW1000Time timePollAckReceived;
-	DW1000Time timeRangeSent;
-	DW1000Time timeRangeReceived;
+	DW1000Time timePollSent;		// _BASE
+	DW1000Time timePollReceived;	// _ANCHOR
+	DW1000Time timePollAckSent;		// _ANCHOR
+	DW1000Time timePollAckReceived;	// _BASE
+	DW1000Time timeRangeSent;		// _BASE
+	DW1000Time timeRangeReceived;	// _ANCHOR
+	DW1000Time timeRangeAllSent; 	// _ANCHOR  // for TDOF only
+	DW1000Time timeRangeAllReceived;// _TAG 	// for TDOF only
 	
 	void    noteActivity();
 	boolean isInactive();

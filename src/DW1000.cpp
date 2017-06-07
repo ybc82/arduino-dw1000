@@ -1073,6 +1073,28 @@ DW1000Time DW1000Class::setDelay(const DW1000Time& delay) {
 	return futureTime;
 }
 
+DW1000Time DW1000Class::setDelayAbs(const DW1000Time& time) {
+	/* set sent timestamp */
+	if(_deviceMode == TX_MODE) {
+		setBit(_sysctrl, LEN_SYS_CTRL, TXDLYS_BIT, true);
+	} else if(_deviceMode == RX_MODE) {
+		setBit(_sysctrl, LEN_SYS_CTRL, RXDLYS_BIT, true);
+	} else {
+		// in idle, ignore
+		return DW1000Time();
+	}
+	byte       delayBytes[5];
+	DW1000Time futureTime;
+	futureTime = time;
+	futureTime.getTimestamp(delayBytes);
+	delayBytes[0] = 0;
+	delayBytes[1] &= 0xFE;
+	writeBytes(DX_TIME, NO_SUB, delayBytes, LEN_DX_TIME);
+	// adjust expected time with configured antenna delay
+	futureTime.setTimestamp(delayBytes);
+	futureTime += _antennaDelay;
+	return futureTime;
+}
 
 void DW1000Class::setDataRate(byte rate) {
 	rate &= 0x03;

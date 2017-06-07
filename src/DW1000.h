@@ -232,6 +232,7 @@ public:
 	
 	/* transmit and receive configuration. */
 	static DW1000Time   setDelay(const DW1000Time& delay);
+	static DW1000Time 	setDelayAbs(const DW1000Time& time);
 	static void         receivePermanently(boolean val);
 	static void         setData(byte data[], uint16_t n);
 	static void         setData(const String& data);

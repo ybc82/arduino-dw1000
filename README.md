@@ -1,6 +1,10 @@
 # arduino-dw1000
 A library that offers functionality to use Decawave's DW1000 chips/modules with Arduino
 (see http://www.decawave.com/products/dwm1000-module).
+On this branch of ybc82, 
+1) some bugs have been fixed;
+2) more information about the modules are fetched to help with NLOS detection;
+3) TDOA localization is supported (soon).
 
 Project state
 -------------
@@ -23,7 +27,25 @@ Installation
  3. Select the downloaded ZIP file of the DW1000 library
  4. You should now see the library in the list and have access to the examples in the dedicated section of the IDE
 
+OR
+Put the folder at \Documents\Arduino\libraries. Then you can open the sketches and the libraries should be recognized.
+
 Note that in version 1.6.6 of your Arduino IDE you can get the library via the Arduino library manager.
+
+Other dependencies (just put them under \Documents\Arduino\libraries):
+ 1. to be added...
+
+Modules
+-------
+
+The sketches are for different tests or applications.
+In TOF applications:
+1) DW1000Ranging_ANCHOR is for anchor;
+2) DW1000Ranging_TAG is for tag.
+IN TDOA applications:
+1) DW1000SyncRanging_ANCHOR is for anchor;
+2) DW1000SyncRanging_BASE is for base;
+3) DW1000SyncRanging_TAG is for tag.
 
 Contents
 --------
