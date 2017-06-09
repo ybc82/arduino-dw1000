@@ -48,7 +48,7 @@
 
 //Max devices we put in the networkDevices array ! Each DW1000Device is 74 Bytes in SRAM memory for now.
 // For TDOA scheme, this is the max devices number of [Base + Anchors]
-#define MAX_DEVICES 5
+#define MAX_DEVICES 5 // THIS IS TRICKY FOR ARDUINO BOARDS
 
 //Default Pin for module:
 #define DEFAULT_RST_PIN 9
@@ -104,6 +104,8 @@ public:
 	
 	static uint8_t getNetworkDevicesNumber() { return _networkDevicesNumber; };
 	
+	static double* 	getPositionOutput() { return _position;}
+
 	//ranging functions
 	static int16_t detectMessageType(byte datas[]); // TODO check return type
 	static void loop();
@@ -143,6 +145,9 @@ private:
 	static int32_t      timer;
 	static int16_t      counterForBlink;
 	
+	// position output
+	static double 		_position[3];
+
 	//Handlers:
 	static void (* _handleNewRange)(void);
 	static void (* _handleBlinkDevice)(DW1000Device*);
@@ -213,7 +218,8 @@ private:
 	
 	//methods for range computation
 	static void computeRangeAsymmetric(DW1000Device* myDistantDevice, DW1000Time* myTOF);
-	
+	static void computeRangeTDOA(DW1000Device* myDistantDevice, double* distanceRel);
+	static void computePositionTDOA(double* distanceRel, double* pos);
 	static void timerTick();
 	
 	//Utils

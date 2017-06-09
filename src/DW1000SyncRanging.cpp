@@ -33,6 +33,7 @@
 
 #include "DW1000SyncRanging.h"
 #include "DW1000Device.h"
+#include <MatrixMath.h>
 
 DW1000SyncRangingClass DW1000SyncRanging;
 
@@ -67,6 +68,8 @@ boolean          DW1000SyncRangingClass::_protocolFailed = false;
 int32_t            DW1000SyncRangingClass::timer           = 0;
 int16_t            DW1000SyncRangingClass::counterForBlink = 0; // TODO 8 bit?
 
+// postition output
+double 			   DW1000SyncRangingClass::_position[3] = {0, 0, 0};
 
 // data buffer
 byte          DW1000SyncRangingClass::data[LEN_DATA];
@@ -371,7 +374,7 @@ DW1000Device* DW1000SyncRangingClass::getBaseDevice()
 
 DW1000Device* DW1000SyncRangingClass::getAnchorDevice(uint8_t index)
 {	// get the anchor device
-	return &_networkDevice[index+1];
+	return &_networkDevices[index+1];
 }
 
 /* ###########################################################################
@@ -851,6 +854,9 @@ void DW1000SyncRangingClass::loop() {
 					//we grab the replytime wich is for us
 					DW1000.getReceiveTimestamp(myDistantDevice->timeRangeAllReceived);
 
+					static uint8_t numActiveAnchors = 0;
+					numActiveAnchors++;
+
 					float curRange;
 					memcpy(&curRange, data+1+SHORT_MAC_LEN, 4);
 					float curRXPower;
@@ -890,20 +896,47 @@ void DW1000SyncRangingClass::loop() {
 					//we have finished our range computation. We send the corresponding handler
 					if(myDistantDevice->getIndex() == _networkDevicesNumber-1) { // This
 						_expectedMsgId = POLL;
-						
-						// // TDOF CALCULATION
+					}	
+					_lastDistantDevice = myDistantDevice->getIndex();
+
+					if(_handleNewRange != 0) {
+						(*_handleNewRange)();
+					}
+
+					if(myDistantDevice->getIndex() == _networkDevicesNumber-1) { // This
+						// TDOF information
 						// if(_handleNewRange != 0) {
 						// 	(*_handleNewRange)();
 						// }
 
-						// DW1000Time myTOF;
+						// TDOA time calculation
+						double distanceRel[4];
+						if (numActiveAnchors == _networkDevicesNumber - 1)
+						{	// enough information
+							computeRangeTDOA(NULL, distanceRel);
+							uint8_t i = 0;
+							for (i = 0; i < _networkDevicesNumber-1; i++)
+							{
+								if (fabs(distanceRel[i]) > 200)
+									break;
+							}
+							if (i == _networkDevicesNumber-1)
+							{ 	// good distance measurement
+								for(uint8_t i = 0; i < _networkDevicesNumber-1; i++)
+								{
+									Serial.print(distanceRel[i]);
+									Serial.print('\t');
+								}
+								computePositionTDOA(distanceRel, _position);
+								Serial.print(_position[0]);	Serial.print('\t');
+								Serial.println(_position[1]);
+							}
+						}	
 						// computeRangeAsymmetric(myDistantDevice, &myTOF); // CHOSEN RANGING ALGORITHM
 						// float distance = myTOF.getAsMeters();
+
+						numActiveAnchors=0;
 					}	
-					_lastDistantDevice = myDistantDevice->getIndex();
-					if(_handleNewRange != 0) {
-						(*_handleNewRange)();
-					}
 
 				}
 			}
@@ -1232,13 +1265,13 @@ void DW1000SyncRangingClass::computeRangeAsymmetric(DW1000Device* myDistantDevic
 	 */
 }
 
-void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, DW1000Time* myTDOF) {
+void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, double* distanceRel) {
 	// under construction
 	DW1000Device* base = getBaseDevice();
 	int nAnchors = _networkDevicesNumber - 1;
 	DW1000Device* anchors[4];
 	for (uint8_t i = 0; i < nAnchors; i++)
-		anchors = getAnchorDevice(i);
+		anchors[i] = getAnchorDevice(i);
 	
 	DW1000Time baseEcho = (base->timeRangeSent - base->timePollSent).wrap();
 	DW1000Time tagEcho = (base->timeRangeReceived - base->timePollReceived).wrap();
@@ -1249,16 +1282,76 @@ void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, DW1
 	{
 		anchorsEcho[i] = (anchors[i]->timeRangeReceived - anchors[i]->timePollReceived).wrap();
 		tagDelay[i] = (anchors[i]->timeRangeAllReceived - base->timeRangeReceived).wrap();
-		anchorDelay[i] = (anchors[i]->timeRangeAllSent - timeRangeReceived).wrap();
+		anchorDelay[i] = (anchors[i]->timeRangeAllSent - anchors[i]->timeRangeReceived).wrap();
+		// Serial.print(anchors[i]->timeRangeAllReceived); 	Serial.print('\t');
+		// Serial.print(anchorsEcho[i]);	Serial.print('\t');
+		// Serial.print(tagEcho);			Serial.print('\t');
+		// Serial.print(anchorDelay[i]);	Serial.print('\t');
+		// Serial.print(tagDelay[i]); 		Serial.print('\t');
+		// Serial.print(anchors[i]->getRange());			Serial.print('\t');
+		// Serial.print(base->timeRangeReceived);		Serial.print('\t');
+		// 		DW1000Time tTemp = anchorDelay[i];
+		// tTemp *= tagEcho;
+		// tTemp /= anchorsEcho[i];
+		// Serial.print((tTemp).wrap()); 
+		// Serial.println();
+
 	}
 
 	for (uint8_t i = 0; i < 4; i++)
 	{
-		myTDOF[i] = (anchors[i]->timeRangeAllReceived - anchorDelay[i]*tagEcho/anchorEcho[i] - anchors[i]->getRange()*DISTANCE_OF_RADIO_INV - base->timeRangeAllReceived).wrap();
-		Serial.print(myTDOF[i]);
+		// there is a little accuracy lost here, because the multiplation result can be as large as 1.0X * 2^64
+		int64_t td = (tagDelay[i] - anchorDelay[i]/DW1000Time((int64_t)(4))*tagEcho/anchorsEcho[i]*DW1000Time((int64_t)(4))).wrap_0().getTimestamp(); 
+		// Serial.print((int)td); Serial.print('\t');
+		distanceRel[i] = (int)td * DW1000Time::DISTANCE_OF_RADIO - anchors[i]->getRange();;
+		// Serial.print(distanceRel[i]-distanceRel[0]);
+		// Serial.print('\t');
 	}
+	// Serial.println();
 
 }
+
+/*
+	TDOA algorithm
+	Input: relative distance (anchors to tag) [m]
+	Output: position of tag {x, y, z} [m]
+*/
+#define N_ANCHORS 	4 	// number of anchors
+#define DIMENSION 	2	// 2D or 3D
+void DW1000SyncRangingClass::computePositionTDOA(double* distanceRel, double* pos)
+{
+	const double posAnchors[N_ANCHORS][DIMENSION] = {{1.8288, 3.7846}, {2.413, 1.27}, {0.5842, 2.5146}, {0.3556, 0.56388}};	// {x, y, z} [m]
+	double matA[N_ANCHORS-1][DIMENSION+1];
+	double matB[N_ANCHORS-1];
+	double b[N_ANCHORS];
+	double RmSquare[N_ANCHORS]; 	// R-measured square
+	uint8_t i, j;
+	
+	for (i = 0; i < N_ANCHORS; i++)
+	{
+		b[i] = 0;
+		for (j = 0; j < DIMENSION; j++)
+			b[i] += posAnchors[i][j] * posAnchors[i][j];
+
+		RmSquare[i] = distanceRel[i] * distanceRel[i];
+	}
+
+	for (i = 0; i < N_ANCHORS-1; i++)
+	{
+		for (j = 0; j < DIMENSION; j++)
+		{
+			matA[i][j] = -2*posAnchors[i+1][j] + 2*posAnchors[0][j];
+		}
+		matA[i][DIMENSION] = 2*(distanceRel[i+1] - distanceRel[0]);
+		matB[i] = (b[0] - b[i+1]) + (RmSquare[i+1] - RmSquare[0]);
+	}
+
+	// This part could be A^-1*B (or LS)
+	Matrix.Invert(*matA, 3);	// invA
+	Matrix.Multiply(*matA, matB, N_ANCHORS-1, DIMENSION+1, 1, pos);
+}
+
+
 
 /* FOR DEBUGGING*/
 void DW1000SyncRangingClass::visualizeDatas(byte datas[]) {

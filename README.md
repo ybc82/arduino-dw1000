@@ -28,21 +28,22 @@ Installation
  4. You should now see the library in the list and have access to the examples in the dedicated section of the IDE
 
 OR
-Put the folder at \Documents\Arduino\libraries. Then you can open the sketches and the libraries should be recognized.
+Put the folder at \Documents\Arduino\libraries. Then you can run skectches in \examples. DW1000 libraries under \src should be recognized automatically.
 
 Note that in version 1.6.6 of your Arduino IDE you can get the library via the Arduino library manager.
 
 Other dependencies (just put them under \Documents\Arduino\libraries):
- 1. to be added...
+ 1. MatrixMath, https://github.com/ybc82/MatrixMath forked from https://github.com/eecharlie/MatrixMath/
+ 2. MPU9250, https://github.com/ybc82/MPU9250/ forked from https://github.com/brianc118/MPU9250
 
-Modules
+Sketches (Examples)
 -------
 
 The sketches are for different tests or applications.
 In TOF applications:
 1) DW1000Ranging_ANCHOR is for anchor;
 2) DW1000Ranging_TAG is for tag.
-IN TDOA applications:
+In TDOA applications:
 1) DW1000SyncRanging_ANCHOR is for anchor;
 2) DW1000SyncRanging_BASE is for base;
 3) DW1000SyncRanging_TAG is for tag.

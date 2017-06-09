@@ -97,7 +97,8 @@ public:
 	float getAsMeters() const;
 	
 	DW1000Time& wrap();
-	
+	DW1000Time& wrap_0();
+
 	// self test
 	bool isValidTimestamp();
 	

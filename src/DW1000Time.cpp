@@ -191,6 +191,13 @@ DW1000Time& DW1000Time::wrap() {
 	return *this;
 }
 
+DW1000Time& DW1000Time::wrap_0() {
+	if(_timestamp < -(TIME_OVERFLOW>>1)) {
+		_timestamp += TIME_OVERFLOW;
+	}
+	return *this;
+}
+
 /**
  * Check if timestamp is valid for usage with DW1000 device
  * @return true if valid, false if negative or overflow (maybe after calculation)
