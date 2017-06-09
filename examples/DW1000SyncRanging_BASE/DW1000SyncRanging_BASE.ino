@@ -7,70 +7,76 @@
  */
 #include <SPI.h>
 #include "DW1000SyncRanging.h"
+#include "DW1000Time.h"
 
 #define NODE_BASE
 #include "address.h"
 
 // connection pins
-const uint8_t PIN_RST = 9; // reset pin
-const uint8_t PIN_IRQ = 2; // irq pin
+const uint8_t PIN_RST = PIN_NUM_RST; // reset pin
+const uint8_t PIN_IRQ = PIN_NUM_IRQ; // irq pin
 const uint8_t PIN_SS = SS; // spi select pin
 
 const char short_address[] = SHORT_ADDRESS;
 byte anchor1_short_address[] = ANCHOR1_SHORT_ADDRESS;
 byte anchor2_short_address[] = ANCHOR2_SHORT_ADDRESS;
 byte anchor3_short_address[] = ANCHOR3_SHORT_ADDRESS;
+byte anchor4_short_address[] = ANCHOR4_SHORT_ADDRESS;
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
   //init the configuration
-  DW1000Ranging.initCommunication(PIN_RST, PIN_SS, PIN_IRQ); //Reset, CS, IRQ pin
+  DW1000SyncRanging.initCommunication(PIN_RST, PIN_SS, PIN_IRQ); //Reset, CS, IRQ pin
   //define the sketch as anchor. It will be great to dynamically change the type of module
-  DW1000Ranging.attachNewRange(newRange);
-  DW1000Ranging.attachNewDevice(newDevice);
-  DW1000Ranging.attachInactiveDevice(inactiveDevice);
+  DW1000SyncRanging.attachNewRange(newRange);
+  DW1000SyncRanging.attachNewDevice(newDevice);
+  DW1000SyncRanging.attachInactiveDevice(inactiveDevice);
   //Enable the filter to smooth the distance
-  //DW1000Ranging.useRangeFilter(true);
+  //DW1000SyncRanging.useRangeFilter(true);
   
-  //we start the module as a tag
-  DW1000Ranging.startAsTag(UNIQUE_ID, short_address, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
+  //we start the module as a Base
+  DW1000SyncRanging.startAsBase(UNIQUE_ID, short_address, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
   DW1000Device anchor1(anchor1_short_address, true);
   DW1000Device anchor2(anchor2_short_address, true);
   DW1000Device anchor3(anchor3_short_address, true);
-  DW1000Ranging.addNetworkDevices(&anchor1);
-  DW1000Ranging.addNetworkDevices(&anchor2);
-  DW1000Ranging.addNetworkDevices(&anchor3);
+  DW1000Device anchor4(anchor4_short_address, true);
+  
+  DW1000SyncRanging.addNetworkDevices(&anchor1);
+  DW1000SyncRanging.addNetworkDevices(&anchor2);
+  DW1000SyncRanging.addNetworkDevices(&anchor3);
+  DW1000SyncRanging.addNetworkDevices(&anchor4);
 }
 
 void loop() {
-  DW1000Ranging.loop();
+  DW1000SyncRanging.loop();
   
 }
 
 /// The following may be changed
 void newRange() {
-//  Serial.print("from: "); Serial.print(DW1000Ranging.getDistantDevice()->getShortAddress(), HEX);
-//  Serial.print("\t Range: "); Serial.print(DW1000Ranging.getDistantDevice()->getRange()); Serial.print(" m");
-//  Serial.print("\t RX power: "); Serial.print(DW1000Ranging.getDistantDevice()->getRXPower()); Serial.println(" dBm");
+//  Serial.print("from: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getShortAddress(), HEX);
+//  Serial.print("\t Range: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getRange()); Serial.print(" m");
+//  Serial.print("\t RX power: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getRXPower()); Serial.println(" dBm");
 
   Serial.print("$ ");
-  Serial.print(DW1000Ranging.getDistantDevice()->getShortAddress(), HEX);
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getShortAddress(), HEX);
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getRange());
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getRange());
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getRXPower());
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getRXPower());
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getFPPower());
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getFPPower());
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getPeakAmpl(), 0);
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getPeakAmpl(), 0);
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getFPAmpl(), 0);
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getFPAmpl(), 0);
   Serial.print("\t");
-  Serial.print(DW1000Ranging.getDistantDevice()->getPPIndx(), 0);
+  Serial.print(DW1000SyncRanging.getDistantDevice()->getPPIndx(), 0);
   Serial.print("\t");
-  Serial.println(DW1000Ranging.getDistantDevice()->getFPIndx(), 0);
+  Serial.println(DW1000SyncRanging.getDistantDevice()->getFPIndx(), 0);
+ 
 }
 
 void newDevice(DW1000Device* device) {

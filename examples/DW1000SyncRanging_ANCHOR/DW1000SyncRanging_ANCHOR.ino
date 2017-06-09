@@ -7,13 +7,13 @@
  */
 
 #include <SPI.h>
-#include "DW1000Ranging.h"
+#include "DW1000SyncRanging.h"
 
-#define NODE_ANCHOR3
+#define NODE_ANCHOR4
 #include "address.h"
 
 // connection pins
-const uint8_t PIN_RST = 9; // reset pin
+const uint8_t PIN_RST = PIN_NUM_RST; // reset pin
 const uint8_t PIN_IRQ = PIN_NUM_IRQ; // irq pin
 const uint8_t PIN_SS = SS; // spi select pin
 
@@ -28,34 +28,61 @@ void setup() {
   delay(1000);
 
   //init the configuration
-  DW1000Ranging.initCommunication(PIN_RST, PIN_SS, PIN_IRQ); //Reset, CS, IRQ pin
+  DW1000SyncRanging.initCommunication(PIN_RST, PIN_SS, PIN_IRQ); //Reset, CS, IRQ pin
   //define the sketch as anchor. It will be great to dynamically change the type of module
-  DW1000Ranging.attachNewRange(newRange);
-  DW1000Ranging.attachBlinkDevice(newBlink);
-  DW1000Ranging.attachInactiveDevice(inactiveDevice);
+  DW1000SyncRanging.attachNewRange(newRange);
+  DW1000SyncRanging.attachBlinkDevice(newBlink);
+  DW1000SyncRanging.attachInactiveDevice(inactiveDevice);
   //Enable the filter to smooth the distance
-  //DW1000Ranging.useRangeFilter(true);
+  //DW1000SyncRanging.useRangeFilter(true);
   
   //we start the module as an anchor
-  DW1000Ranging.startAsAnchor(UNIQUE_ID, short_address, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
-// DW1000Ranging.startAsAnchor(UNIQUE_ID, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
+  DW1000SyncRanging.startAsAnchor(UNIQUE_ID, short_address, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
+// DW1000SyncRanging.startAsAnchor(UNIQUE_ID, DW1000.MODE_LONGDATA_RANGE_ACCURACY);
 
-  // add tag information
+  // add neighbor information
   DW1000Device myBase(base_short_address, true);
-  DW1000Ranging.addNetworkDevices(&myBase);
-//  DW1000Ranging.setExpectedMsgId(0); //POLL // not necessary, can be solved by checkforreset
+  DW1000SyncRanging.addNetworkDevices(&myBase);
+//  DW1000SyncRanging.setExpectedMsgId(0); //POLL // not necessary, can be solved by checkforreset
 }
 
 void loop() {
-  DW1000Ranging.loop();
+  DW1000SyncRanging.loop();
 }
 
 /// the following may be changed
 void newRange() {
-  Serial.print("from: "); Serial.print(DW1000Ranging.getDistantDevice()->getShortAddress(), HEX);
-  Serial.print("\t Range: "); Serial.print(DW1000Ranging.getDistantDevice()->getRange()); Serial.print(" m");
-  Serial.print("\t RX power: "); Serial.print(DW1000Ranging.getDistantDevice()->getRXPower()); Serial.println(" dBm");
+  Serial.print("from: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getShortAddress(), HEX);
+  Serial.print("\t Range: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getRange()); Serial.print(" m");
+  Serial.print("\t RX power: "); Serial.print(DW1000SyncRanging.getDistantDevice()->getRXPower()); Serial.println(" dBm");
+
   
+  DW1000Device* myDistantDevice = DW1000SyncRanging.getDistantDevice();
+  printLong(myDistantDevice->timePollSent.getTimestamp());
+  printLong(myDistantDevice->timePollAckReceived.getTimestamp());
+  printLong(myDistantDevice->timeRangeSent.getTimestamp());
+  printLong(myDistantDevice->timePollReceived.getTimestamp());
+  printLong(myDistantDevice->timePollAckSent.getTimestamp());
+  printLong(myDistantDevice->timeRangeReceived.getTimestamp());
+
+  Serial.println();
+}
+
+/* 
+ *  printLong
+ *  To print int64_t number in serial port
+ */
+void printLong(int64_t num_in)
+{
+  uint64_t num = (uint64_t)(num_in);
+  char buf[18];
+  for (int i = 0; i < 4; i++)
+  {
+    sprintf(buf, "%04X", (uint16_t)(0xFFFF & (num >> (16*(3-i)))));
+    Serial.print(buf);
+//    Serial.print((uint8_t)(0xFF & (num >> (8*(7-i)))), HEX);
+  }
+  Serial.print("\t");
 }
 
 void newBlink(DW1000Device* device) {
