@@ -35,6 +35,7 @@ Note that in version 1.6.6 of your Arduino IDE you can get the library via the A
 Other dependencies (just put them under \Documents\Arduino\libraries):
  1. MatrixMath, https://github.com/ybc82/MatrixMath forked from https://github.com/eecharlie/MatrixMath/
  2. MPU9250, https://github.com/ybc82/MPU9250/ forked from https://github.com/brianc118/MPU9250
+ 3. BigNumber, https://github.com/ybc82/BigNumber
 
 Sketches (Examples)
 -------

@@ -5,7 +5,7 @@
   #define SHORT_ADDRESS {0x00, 0x00}
   #define PIN_NUM_IRQ 2
   #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:90"
-  #define MAX_DEVICES_IN_MEMORY 4
+  #define MAX_DEVICES_IN_MEMORY 5
 #elif defined(NODE_ANCHOR1)
   #define SHORT_ADDRESS {0x00, 0x01}
   #define PIN_NUM_IRQ 3
@@ -26,6 +26,11 @@
   #define PIN_NUM_IRQ 2
   #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:91"
   #define MAX_DEVICES_IN_MEMORY 4
+#elif defined(NODE_ANCHOR5)
+  #define SHORT_ADDRESS {0x00, 0x05}
+  #define PIN_NUM_IRQ 2
+  #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:92"
+  #define MAX_DEVICES_IN_MEMORY 4
 #elif defined(NODE_TAG)   // this is the tag in TOF mode; the following are tags in TDOA mode
   #define SHORT_ADDRESS {0x01, 0x01}
   #define PIN_NUM_IRQ 2
@@ -35,7 +40,7 @@
   #define SHORT_ADDRESS {0x01, 0x01}
   #define PIN_NUM_IRQ 2
   #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:80"
-  #define MAX_DEVICES_IN_MEMORY 5
+  #define MAX_DEVICES_IN_MEMORY 6
 #else
   #error "Node type unspecified!"
 #endif // NODE
@@ -48,6 +53,7 @@
 #define ANCHOR2_SHORT_ADDRESS   {0x00, 0x02}
 #define ANCHOR3_SHORT_ADDRESS   {0x00, 0x03}
 #define ANCHOR4_SHORT_ADDRESS   {0x00, 0x04}
+#define ANCHOR5_SHORT_ADDRESS   {0x00, 0x05}
 
 #define TAG_UNIQUE_ID   "7D:00:22:EA:82:60:3B:9C"
 #endif // ADDRESS_H__
