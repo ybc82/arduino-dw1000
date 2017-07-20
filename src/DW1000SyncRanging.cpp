@@ -918,10 +918,13 @@ void DW1000SyncRangingClass::loop() {
 						{	// enough information
 							computeRangeTDOA(NULL, distanceRel);
 							uint8_t i = 0;
+							uint8_t cnt_positive_relative_distance = 0;
 							for (i = 0; i < _networkDevicesNumber-1; i++)
 							{
-								if (fabs(distanceRel[i]) > 200)
+								if (fabs(distanceRel[i]) > 50)
 									break;
+								if (distanceRel[i] < -10)
+								 	break;
 							}
 
 							if (i == _networkDevicesNumber-1)
@@ -933,9 +936,14 @@ void DW1000SyncRangingClass::loop() {
 								}
 								computePositionTDOA(distanceRel, _position);
 
+								static int t_now = 0;
+								static int t_last = 0;
+								Serial.print("P");			Serial.print('\t');
 								Serial.print(_position[0]);	Serial.print('\t');
-								Serial.println(_position[1]);
-								// Serial.println(millis());
+								Serial.print(_position[1]); Serial.print('\t');
+								t_now = millis();
+								Serial.println(t_now - t_last);
+								t_last = t_now;
 							}
 						}	
 						// computeRangeAsymmetric(myDistantDevice, &myTOF); // CHOSEN RANGING ALGORITHM
@@ -1286,9 +1294,9 @@ void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, dou
 	DW1000Time anchorDelay[MAX_DEVICES];
 	for (uint8_t i = 0; i < nAnchors; i++)
 	{
-		anchorsEcho[i] = (anchors[i]->timeRangeReceived - anchors[i]->timePollReceived).wrap();
-		tagDelay[i] = (anchors[i]->timeRangeAllReceived - base->timeRangeReceived).wrap();
-		anchorDelay[i] = (anchors[i]->timeRangeAllSent - anchors[i]->timeRangeReceived).wrap();
+		anchorsEcho[i] = (anchors[i]->timeRangeReceived - anchors[i]->timePollReceived).wrap_0();
+		tagDelay[i] = (anchors[i]->timeRangeAllReceived - base->timeRangeReceived).wrap_0();
+		anchorDelay[i] = (anchors[i]->timeRangeAllSent - anchors[i]->timeRangeReceived).wrap_0();
 		// Serial.print(anchors[i]->timeRangeAllReceived); 	Serial.print('\t');
 		// Serial.print(anchorsEcho[i]);	Serial.print('\t');
 		// Serial.print(tagEcho);			Serial.print('\t');
@@ -1304,6 +1312,7 @@ void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, dou
 
 	}
 		
+	BigNumber t_temp;
 	for (uint8_t i = 0; i < nAnchors; i++)
 	{
 		// - Solution I: 2-bit accuracy loss
@@ -1314,7 +1323,7 @@ void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, dou
 		BigNumber td_big = BigNumber(anchorDelay[i].getTimestamp());
 		td_big *= tagEcho.getTimestamp();
 		td_big /= anchorsEcho[i].getTimestamp();
-		int64_t t_temp = td_big;
+		t_temp = td_big;
 		td_big = BigNumber(tagDelay[i].getTimestamp()) - td_big;
 		distanceRel[i] = (long long)td_big * DW1000Time::DISTANCE_OF_RADIO - anchors[i]->getRange();
 
@@ -1331,16 +1340,20 @@ void DW1000SyncRangingClass::computeRangeTDOA(DW1000Device* myDistantDevice, dou
 	Output: position of tag {x, y, z} [m]
 */
 #define N_ANCHORS 	5 	// number of anchors
+#define N_ANCHORS_COMBINATION	10	// number of possible combination of anchors
 #define DIMENSION 	2	// 2D or 3D
 void DW1000SyncRangingClass::computePositionTDOA(double* distanceRel, double* pos)
 {
 	// const double posAnchors[N_ANCHORS][DIMENSION] = {{1.8288, 3.7846}, {2.413, 1.27}, {0.5842, 2.5146}, {0.3556, 0.56388}};	// {x, y, z} [m]
-	const double posAnchors[N_ANCHORS][DIMENSION] = {{2.7686,2.8575}, {2.7686,0.6477}, {0.0508,0.7747}, {0.0508,2.8194}, {1.5494, 4.4196}};	// {x, y, z} [m]
+	// const double posAnchors[N_ANCHORS][DIMENSION] = {{2.7686,2.8575}, {2.7686,0.6477}, {0.0508,0.7747}, {0.0508,2.8194}, {1.5494, 4.4196}};	// {x, y, z} [m] // office setup
+	const double posAnchors[N_ANCHORS][DIMENSION] = {{1.0668, -6.6548}, {17.2212, -2.4638}, {-0.2032, 7.874}, {-0.1778, 0.5842}, {13.1826, 8.5217}};
+
+	// Solution I
+	/*
 	double b[N_ANCHORS];
 	double RmSquare[N_ANCHORS]; 	// R-measured square
 	uint8_t i, j;
 	
-	// Solution I
 	double matA[N_ANCHORS-1][DIMENSION+1];
 	double matAt[DIMENSION+1][N_ANCHORS-1];
 	double matAAt_inv[DIMENSION+1][DIMENSION+1];
@@ -1374,7 +1387,55 @@ void DW1000SyncRangingClass::computePositionTDOA(double* distanceRel, double* po
 	Matrix.Invert(*matAAt_inv, DIMENSION+1);
 	Matrix.Multiply(*matAt, matB, DIMENSION+1, N_ANCHORS-1, 1, matAtB);
 	Matrix.Multiply(*matAAt_inv, matAtB, DIMENSION+1, DIMENSION+1, 1, pos);
+	*/
+
+	// Solution I + combination of anchors
+	///*
+	double b[N_ANCHORS];			// b_i = A_ix^2 + A_iy^2
+	double RmSquare[N_ANCHORS]; 	// R-measured square
+	uint8_t i, j, i_rel, index;
 	
+	double matA[N_ANCHORS_COMBINATION][DIMENSION+1];
+	double matAt[DIMENSION+1][N_ANCHORS_COMBINATION];
+	double matAAt_inv[DIMENSION+1][DIMENSION+1];
+	double matB[N_ANCHORS_COMBINATION];
+	double matAtB[DIMENSION+1];
+	for (i = 0; i < N_ANCHORS; i++)
+	{
+		b[i] = 0;
+		for (j = 0; j < DIMENSION; j++)
+			b[i] += posAnchors[i][j] * posAnchors[i][j];
+
+		RmSquare[i] = distanceRel[i] * distanceRel[i];
+	}
+
+	index = 0;
+	for (i = 1; i < N_ANCHORS; i++)
+	{
+		for (i_rel = 0; i_rel < i; i_rel++)
+		{
+			for (j = 0; j < DIMENSION; j++)
+			{
+				matA[index][j] = -2*posAnchors[i][j] + 2*posAnchors[i_rel][j];
+			}
+			matA[index][DIMENSION] = 2*(distanceRel[i] - distanceRel[i_rel]);
+			matB[index] = (b[i_rel] - b[i]) + (RmSquare[i] - RmSquare[i_rel]);
+
+			index++;
+		}
+	}
+
+	// This part could be A^-1*B 
+	// Matrix.Invert(*matA, 3);	// invA
+	// Matrix.Multiply(*matA, matB, N_ANCHORS-1, DIMENSION+1, 1, pos);
+	// Or Least Square
+	Matrix.Transpose(*matA, N_ANCHORS_COMBINATION, DIMENSION+1, *matAt);
+	Matrix.Multiply(*matAt, *matA, DIMENSION+1, N_ANCHORS_COMBINATION, DIMENSION+1, *matAAt_inv);
+	Matrix.Invert(*matAAt_inv, DIMENSION+1);
+	Matrix.Multiply(*matAt, matB, DIMENSION+1, N_ANCHORS_COMBINATION, 1, matAtB);
+	Matrix.Multiply(*matAAt_inv, matAtB, DIMENSION+1, DIMENSION+1, 1, pos);
+	// */
+
 	// Solution II
 	/*
 	double matA[N_ANCHORS-2][DIMENSION];
