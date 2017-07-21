@@ -42,9 +42,15 @@
   #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:80"
   #define MAX_DEVICES_IN_MEMORY 6
 #elif defined(NODE_TAG2)
+  #define SEND_TO_RECV
   #define SHORT_ADDRESS {0x01, 0x02}
   #define PIN_NUM_IRQ 2
   #define UNIQUE_ID "82:17:5B:D5:A9:9A:E2:81"
+  #define MAX_DEVICES_IN_MEMORY 6
+#elif defined(NODE_RECV)
+  #define SHORT_ADDRESS {0x02, 0x01}
+  #define PIN_NUM_IRQ 2
+  #define UNIQUE_ID "83:17:5B:D5:A9:9A:E2:81"
   #define MAX_DEVICES_IN_MEMORY 6
 #else
   #error "Node type unspecified!"
