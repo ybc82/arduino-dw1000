@@ -902,9 +902,9 @@ void DW1000SyncRangingClass::loop() {
 					}	
 					_lastDistantDevice = myDistantDevice->getIndex();
 
-					if(_handleNewRange != 0) {
-						(*_handleNewRange)();
-					}
+					// if(_handleNewRange != 0) {
+					// 	(*_handleNewRange)();
+					// }
 
 					if(myDistantDevice->getIndex() == _networkDevicesNumber-1) { // This
 						// TDOF information
@@ -929,13 +929,17 @@ void DW1000SyncRangingClass::loop() {
 
 							if (i == _networkDevicesNumber-1)
 							{ 	// good distance measurement
+								computePositionTDOA(distanceRel, _position);
+								
+								if(_handleNewRange != 0) {
+									(*_handleNewRange)();
+								}
+
 								for(uint8_t i = 0; i < _networkDevicesNumber-1; i++)
 								{
 									Serial.print(distanceRel[i]);
 									Serial.print('\t');
 								}
-								computePositionTDOA(distanceRel, _position);
-
 								static int t_now = 0;
 								static int t_last = 0;
 								Serial.print("P");			Serial.print('\t');
@@ -944,6 +948,9 @@ void DW1000SyncRangingClass::loop() {
 								t_now = millis();
 								Serial.println(t_now - t_last);
 								t_last = t_now;
+
+								
+								
 							}
 						}	
 						// computeRangeAsymmetric(myDistantDevice, &myTOF); // CHOSEN RANGING ALGORITHM

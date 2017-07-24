@@ -48,7 +48,7 @@
 
 //Max devices we put in the networkDevices array ! Each DW1000Device is 74 Bytes in SRAM memory for now.
 // For TDOA scheme, this is the max devices number of [Base + Anchors]
-#define MAX_DEVICES 6 // THIS IS TRICKY FOR ARDUINO BOARDS
+#define MAX_DEVICES 6 // THIS IS TRICKY FOR ARDUINO BOARDS; SHOULD BE 4 FOR FIRST VERSION
 
 //Default Pin for module:
 #define DEFAULT_RST_PIN 9
