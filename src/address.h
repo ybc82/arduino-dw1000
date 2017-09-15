@@ -67,4 +67,8 @@
 #define ANCHOR5_SHORT_ADDRESS   {0x00, 0x05}
 
 #define TAG_UNIQUE_ID   "7D:00:22:EA:82:60:3B:9C"
+
+#define TAG2_MAG_BIAS    {17.16f, -13.24f, -9.45f}
+#define RECV_MAG_BIAS    {6.0887f, 8.3029f, -13.9182f}
+#define TAG1_MAG_BIAS    {20.1396, 35.1246, -20.9240}
 #endif // ADDRESS_H__
