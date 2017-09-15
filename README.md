@@ -34,8 +34,11 @@ Note that in version 1.6.6 of your Arduino IDE you can get the library via the A
 
 Other dependencies (just put them under \Documents\Arduino\libraries):
  1. MatrixMath, https://github.com/ybc82/MatrixMath forked from https://github.com/eecharlie/MatrixMath/
- 2. MPU9250, https://github.com/ybc82/MPU9250/ forked from https://github.com/brianc118/MPU9250
+ 2. MPU9250, https://github.com/nox771/i2c_t3
+// No longer used: MPU9250, https://github.com/ybc82/MPU9250/ forked from https://github.com/brianc118/MPU9250
  3. BigNumber, https://github.com/ybc82/BigNumber
+
+In the latest version, I added these dependencies to the project too.
 
 Sketches (Examples)
 -------
@@ -47,7 +50,9 @@ In TOF applications:
 In TDOA applications:
 1) DW1000SyncRanging_ANCHOR is for anchor;
 2) DW1000SyncRanging_BASE is for base;
-3) DW1000SyncRanging_TAG is for tag.
+3) DW1000SyncRanging_TAG is for tag;
+4) DW1000SyncRanging_MobileTAG is for the tag that can send data to REVC;
+5) DW1000SyncRanging_RECV is for a module that gets data from MobileTAG and sends the data to ROS.
 
 Contents
 --------
