@@ -8,8 +8,9 @@
 
 #include <SPI.h>
 #include "DW1000SyncRanging.h"
+#include <MPU9250.h>
 
-#define NODE_ANCHOR4
+#define NODE_ANCHOR5
 #include "address.h"
 
 // connection pins
@@ -23,8 +24,25 @@ char short_address[] = SHORT_ADDRESS;
 byte base_address[] = BASE_ADDRESS;
 byte base_short_address[] = BASE_SHORT_ADDRESS;
 
+// For MPU9250
+#define SPI_CLOCK 8000000  // 8MHz clock works.
+#define SS_PIN   8
+#define INT_PIN  3
+#define LED      14
+MPU9250 mpu(SPI_CLOCK, SS_PIN);
+
 void setup() {
   Serial.begin(115200);
+
+  // For MPU9250 Only
+  pinMode(INT_PIN, INPUT);
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+  pinMode(10, OUTPUT);
+  digitalWrite(10, 1);
+  SPI.begin();
+  mpu.init(true); // to disable I2C for MPU9250
+  
   delay(1000);
 
   //init the configuration

@@ -10,15 +10,10 @@
 #include "DW1000Time.h"
 #include <MPU9250.h>
 #include <MatrixMath.h>
-#include <ros.h>
-#include <geometry_msgs/Pose.h>
 
-ros::NodeHandle nh;
-geometry_msgs::Pose geo_msg;
-ros::Publisher chatter("UWB/Pose1", &geo_msg);
-
-#define NODE_TAG1
+#define NODE_TAG2
 #include "address.h"
+const double mag_bias[3] = TAG2_MAG_BIAS;
 
 // connection pins
 const uint8_t PIN_RST = PIN_NUM_RST; // reset pin
@@ -40,16 +35,10 @@ byte base_short_address[] = BASE_SHORT_ADDRESS;
 #define myLed    13
 #define adoPin   15
 MPU9250 IMU(0x69, 0);
+float q_output[4] = {1.0, 0.0, 0.0, 0.0};
 
 int beginStatus;
 int now, then;
-
-int motion;
-float ax_p, ay_p, az_p, diff;
-double* UWBpos;
-double testx,testy;
-const double mag_bias[3] = TAG1_MAG_BIAS;
-float q_output[4];
 
 //**************************************fusion settings**********************************************
 
@@ -89,10 +78,7 @@ float g = 9.807;
 
 
 void setup() {
-  // ROS
-  nh.initNode();
-  nh.advertise(chatter);
-  Serial.begin(115200);
+    Serial.begin(115200);
 
 // MPU part
   pinMode(intPin, INPUT);
@@ -109,6 +95,7 @@ void setup() {
     delay(1000);
     Serial.println("IMU failed");
   }
+//  Serial.begin(115200);
   delay(1000);
 
   //init the configuration
@@ -136,46 +123,44 @@ void setup() {
   DW1000SyncRanging.addNetworkDevices(&anchor4);
   DW1000SyncRanging.addNetworkDevices(&anchor5);
   then = micros();
-  readIMU();
-  delay(2000);
-  UWBpos = DW1000SyncRanging.getPositionOutput();
-  testx = UWBpos[0];
-  testy = UWBpos[1];
+//  readIMU();
 }
 
 void loop() {
   DW1000SyncRanging.loop();
-//  DW1000SyncRanging.loop();
-//   DW1000SyncRanging.loop();
-//    DW1000SyncRanging.loop();
+  DW1000SyncRanging.loop();
+   DW1000SyncRanging.loop();
+   DW1000SyncRanging.loop();
 //     DW1000SyncRanging.loop();
-//  mpu.read_all();
-//Serial.println(millis());
+
+
   now = micros();
   if((now - then) >= 22000) {
     then = now;
     readIMU();
     fusion();
-    UWBpos = DW1000SyncRanging.getPositionOutput();
-    testx = UWBpos[0];
-    testy = UWBpos[1];
-//    Serial.println(testx);
-//    Serial.println(testy);
-    rosPub();
+
     static int cnt_print = 0;
     cnt_print++;
     if (cnt_print >= 5)
     {
       cnt_print = 0;
-//
+
       Serial.print('O');  Serial.print('\t');
       Serial.print(roll); Serial.print('\t');
       Serial.print(pitch);Serial.print('\t');
       Serial.print(yaw);  Serial.print('\t');
+      
+      Serial.print('A');  Serial.print('\t');
+      Serial.print(ax);   Serial.print('\t');
+      Serial.print(ay);   Serial.print('\t');
+      Serial.print(az);   Serial.print('\t');
       Serial.println();
-//      printIMU();
+//    printIMU();
     }
+    
   }
+  
 }
 
 /// The following may be changed
@@ -216,7 +201,24 @@ void newRange() {/*
   */
 //mpu.read_all();
 //Serial.println(millis());
-
+#ifdef SEND_TO_RECV // This is designed for sending data to a specific data receiving module
+  DW1000.newTransmit();
+  DW1000.setDefaults();
+  DW1000SyncRangingClass::data[0] = 0x10;
+  DW1000SyncRangingClass::data[1] = 7;
+  float position[3]; 
+  for (int i = 0; i < 3; i++)
+  {
+    position[i] = DW1000SyncRanging.getPositionOutput()[i];
+    memcpy(DW1000SyncRangingClass::data+2+i*4, &position[i], 4);
+  }
+  for (int i = 0; i < 4; i++)
+  {
+    memcpy(DW1000SyncRangingClass::data + 2 + 3*4 + i*4, &q[i], 4);
+  }
+  DW1000.setData(DW1000SyncRangingClass::data, LEN_DATA);
+  DW1000.startTransmit();
+#endif // SEND_TO_RECV
 }
 
 /* 
@@ -268,42 +270,29 @@ void readIMU() {
 void printIMU(){
 
   // print the data
-//  Serial.print("MPU!!!!!!");
-//  Serial.print(ax,6);
-//  Serial.print("\t");
-//  Serial.print(ay,6);
-//  Serial.print("\t");
-//  Serial.print(az,6);
-//  Serial.print("\t");
-//
-//  Serial.print(gx,6);
-//  Serial.print("\t");
-//  Serial.print(gy,6);
-//  Serial.print("\t");
-//  Serial.print(gz,6);
-//  Serial.print("\t");
+  Serial.print("M");
+  Serial.print(ax,6);
+  Serial.print("\t");
+  Serial.print(ay,6);
+  Serial.print("\t");
+  Serial.print(az,6);
+  Serial.print("\t");
+
+  Serial.print(gx,6);
+  Serial.print("\t");
+  Serial.print(gy,6);
+  Serial.print("\t");
+  Serial.print(gz,6);
+  Serial.print("\t");
 
   Serial.print(mx,6);
   Serial.print("\t");
   Serial.print(my,6);
   Serial.print("\t");
   Serial.print(mz,6);
-  Serial.println("\t");
+  Serial.print("\t");
 
-//  Serial.println(t,6);
-}
-
-void rosPub() {
-  //double* UWBpos = DW1000SyncRanging.getPositionOutput();
-  geo_msg.position.x = testx;
-  geo_msg.position.y = testy;
-  geo_msg.position.z = 0;
-  geo_msg.orientation.w = q_output[0];
-  geo_msg.orientation.x = q_output[1];
-  geo_msg.orientation.y = q_output[2];
-  geo_msg.orientation.z = q_output[3];
-  chatter.publish( &geo_msg );
-  nh.spinOnce();
+  Serial.println(t,6);
 }
 
 void fusion() {
@@ -386,11 +375,10 @@ void fusion() {
       roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
       pitch *= 180.0f / PI;
       yaw   *= 180.0f / PI; 
-      yaw   -= 9.335;//13.8; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
-      yaw   += 120.0;//highbay offset
+      // yaw   += 120.0;//highbay offset
       roll  *= 180.0f / PI;
-      EulerToQuaternion(pitch * PI/180.0, roll* PI/180.0, yaw* PI/180.0, q_output);
- 
+      //EulerToQuaternion(pitch*PI/180.0f, roll*PI/180.0f, yaw*PI/180.0f, q_output);
+       
       if(SerialDebug) {
       //Serial.print("Yaw, Pitch, Roll: ");
 //      Serial.print(yaw, 2);
@@ -421,18 +409,17 @@ void fusion() {
   }
 }
 
-static void EulerToQuaternion(double pitch, double roll, double yaw, float* q_output)
+static void EulerToQuaternion(double _pitch, double _roll, double _yaw, float* q_output)
 {
-  double t0 = cos(yaw * 0.5);
-  double t1 = sin(yaw * 0.5);
-  double t2 = cos(roll * 0.5);
-  double t3 = sin(roll * 0.5);
-  double t4 = cos(pitch * 0.5);
-  double t5 = sin(pitch * 0.5);
+  double t0 = cos(_yaw * 0.5);
+  double t1 = sin(_yaw * 0.5);
+  double t2 = cos(_roll * 0.5);
+  double t3 = sin(_roll * 0.5);
+  double t4 = cos(_pitch * 0.5);
+  double t5 = sin(_pitch * 0.5);
 
   q_output[0] = t0 * t2 * t4 + t1 * t3 * t5;
   q_output[1] = t0 * t3 * t4 - t1 * t2 * t5;
   q_output[2] = t0 * t2 * t5 + t1 * t3 * t4;
   q_output[3] = t1 * t2 * t4 - t0 * t3 * t5;
 }
-
